@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Singly Linked List Traversal Visualizer</title>
+<style>
+  :root { color-scheme: light; --ink:#172033; --muted:#64748b; --line:#dbe3ef; --accent:#2563eb; --active:#dcfce7; --active-line:#16a34a; --panel:#f8fafc; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#f1f5f9; color:var(--ink); font:16px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  main { max-width:900px; margin:0 auto; padding:28px 16px 40px; }
+  h1 { font-size:clamp(1.5rem,4vw,2.2rem); line-height:1.2; margin:0 0 8px; }
+  .subtitle { color:var(--muted); margin:0 0 24px; }
+  .card { background:white; border:1px solid var(--line); border-radius:16px; padding:20px; margin:16px 0; box-shadow:0 4px 16px #0f172a0a; }
+  .label { font-size:.8rem; font-weight:750; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:12px; }
+  .nodes { display:flex; align-items:center; gap:10px; overflow-x:auto; padding:10px 4px 16px; }
+  .node-wrap { display:flex; align-items:center; gap:10px; flex:0 0 auto; }
+  .node { min-width:104px; border:2px solid var(--line); border-radius:12px; background:white; overflow:hidden; transition:all .2s ease; }
+  .node.active { border-color:var(--active-line); background:var(--active); box-shadow:0 0 0 3px #16a34a20; transform:translateY(-2px); }
+  .node .data { font-size:1.5rem; font-weight:800; text-align:center; padding:10px 12px 4px; }
+  .node .next { border-top:1px solid var(--line); text-align:center; color:var(--muted); padding:5px 8px; font-size:.78rem; }
+  .arrow { color:var(--accent); font-size:1.5rem; font-weight:800; }
+  .none { flex:0 0 auto; border:2px dashed #94a3b8; color:#475569; border-radius:10px; padding:12px; font-weight:700; }
+  .status { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px; margin-top:8px; }
+  .status strong { display:block; margin-bottom:4px; }
+  .output { font:600 1rem ui-monospace,SFMono-Regular,Menlo,monospace; overflow-wrap:anywhere; min-height:28px; }
+  .controls { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+  button { border:1px solid #cbd5e1; background:white; color:var(--ink); padding:10px 16px; border-radius:10px; font:700 .95rem system-ui,sans-serif; cursor:pointer; }
+  button.primary { background:var(--accent); color:white; border-color:var(--accent); }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  .progress { height:7px; background:#e2e8f0; border-radius:99px; overflow:hidden; margin:12px 0; }
+  .progress > div { height:100%; width:0; background:var(--accent); transition:width .2s; }
+  pre { margin:0; padding:16px; background:#0f172a; color:#e2e8f0; border-radius:12px; overflow:auto; font-size:.9rem; line-height:1.65; }
+  .kw { color:#93c5fd; } .fn { color:#c4b5fd; } .comment { color:#94a3b8; }
+  .note { color:var(--muted); font-size:.9rem; }
+  @media (max-width:520px) { .card { padding:15px; } .node { min-width:82px; } .node .data { font-size:1.25rem; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Singly Linked List: Traversal</h1>
+  <p class="subtitle">Interactive visualizer for DSA with Python · Step through each node and watch the output build.</p>
+
+  <section class="card">
+    <div class="label">Linked list structure</div>
+    <div class="nodes" id="nodes" aria-live="polite"></div>
+    <div class="progress" aria-label="Traversal progress"><div id="progressBar"></div></div>
+    <div class="status">
+      <strong id="stepTitle">Ready to begin</strong>
+      <div id="explanation">Start with current = head. The current reference points to the first node.</div>
+    </div>
+    <div style="margin-top:16px">
+      <div class="label">Printed output</div>
+      <div class="output" id="output">(empty)</div>
+    </div>
+    <div class="controls">
+      <button id="prevBtn">← Previous</button>
+      <button class="primary" id="nextBtn">Next step →</button>
+      <button id="autoBtn">▶ Auto play</button>
+      <button id="resetBtn">↺ Reset</button>
+    </div>
+    <p class="note" id="counter">Step 1 of 7</p>
+  </section>
+
+  <section class="card">
+    <div class="label">Python code</div>
+    <pre><code><span class="kw">class</span> Node:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, data):
+        self.data = data
+        self.next = <span class="kw">None</span>
+
+n1 = Node(10)
+n2 = Node(20)
+n3 = Node(30)
+n1.next = n2
+n2.next = n3
+head = n1
+
+<span class="comment"># Traversal</span>
+current = head
+<span class="kw">while</span> current <span class="kw">is not</span> <span class="kw">None</span>:
+    print(current.data)
+    current = current.next</code></pre>
+    <p class="note" style="margin-bottom:0">Key idea: move <code>current</code>, not <code>head</code>. This preserves the starting reference to the list.</p>
+  </section>
+</main>
+<script>
+(() => {
+  const values = [10, 20, 30];
+  // Each step describes the state after the indicated action.
+  const steps = [
+    {pos:0, output:[], title:"1. Initialize current = head", text:"current now refers to the first node (10). Nothing has been printed yet."},
+    {pos:0, output:[10], title:"2. Print current.data", text:"current.data is 10, so 10 is printed. Next, current moves to current.next."},
+    {pos:1, output:[10], title:"3. Move to the next node", text:"current now refers to node 20. The loop condition is still true."},
+    {pos:1, output:[10,20], title:"4. Print current.data", text:"20 is printed. Then current moves to the next node, 30."},
+    {pos:2, output:[10,20], title:"5. Move to the next node", text:"current now refers to node 30. The loop condition is still true."},
+    {pos:2, output:[10,20,30], title:"6. Print current.data", text:"30 is printed. Then current = current.next sets current to None."},
+    {pos:-1, output:[10,20,30], title:"7. Stop: current is None", text:"The while condition is false, so the loop ends. All nodes have been visited."}
+  ];
+  let step = 0, timer = null;
+  const nodesEl = document.getElementById('nodes');
+  const outputEl = document.getElementById('output');
+  const titleEl = document.getElementById('stepTitle');
+  const explanationEl = document.getElementById('explanation');
+  const counterEl = document.getElementById('counter');
+  const progressBar = document.getElementById('progressBar');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const autoBtn = document.getElementById('autoBtn');
+
+  function renderNodes(pos) {
+    nodesEl.innerHTML = '';
+    values.forEach((value, i) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'node-wrap';
+      const node = document.createElement('div');
+      node.className = 'node' + (pos === i ? ' active' : '');
+      node.innerHTML = `<div class="data">${value}</div><div class="next">${i === values.length - 1 ? 'next = None' : 'next → node ' + (i + 2)}</div>`;
+      wrap.appendChild(node);
+      if (i < values.length - 1) {
+        const arrow = document.createElement('div');
+        arrow.className = 'arrow';
+        arrow.textContent = '→';
+        wrap.appendChild(arrow);
+      }
+      nodesEl.appendChild(wrap);
+    });
+    const arrow = document.createElement('div');
+    arrow.className = 'arrow';
+    arrow.textContent = '→';
+    nodesEl.appendChild(arrow);
+    const none = document.createElement('div');
+    none.className = 'none';
+    none.textContent = 'None';
+    nodesEl.appendChild(none);
+  }
+  function render() {
+    const s = steps[step];
+    renderNodes(s.pos);
+    outputEl.textContent = s.output.length ? s.output.join('  ') : '(empty)';
+    titleEl.textContent = s.title;
+    explanationEl.textContent = s.text;
+    counterEl.textContent = `Step ${step + 1} of ${steps.length}`;
+    progressBar.style.width = `${(step / (steps.length - 1)) * 100}%`;
+    prevBtn.disabled = step === 0;
+    nextBtn.disabled = step === steps.length - 1;
+    if (step === steps.length - 1) stopAuto();
+  }
+  function stopAuto() {
+    if (timer) clearInterval(timer);
+    timer = null;
+    autoBtn.textContent = '▶ Auto play';
+  }
+  prevBtn.addEventListener('click', () => { stopAuto(); if (step > 0) step--; render(); });
+  nextBtn.addEventListener('click', () => { stopAuto(); if (step < steps.length - 1) step++; render(); });
+  document.getElementById('resetBtn').addEventListener('click', () => { stopAuto(); step = 0; render(); });
+  autoBtn.addEventListener('click', () => {
+    if (timer) { stopAuto(); return; }
+    if (step === steps.length - 1) step = 0;
+    autoBtn.textContent = '⏸ Pause';
+    render();
+    timer = setInterval(() => {
+      if (step < steps.length - 1) { step++; render(); }
+      else stopAuto();
+    }, 1400);
+  });
+  render();
+})();
+</script>
+</body>
+</html>
