@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linked List Traversal Visualizer</title>
+<style>
+:root{color-scheme:light;--ink:#172033;--muted:#64748b;--line:#dbe3ef;--accent:#2563eb;--active:#dcfce7;--active-line:#16a34a;--panel:#f8fafc}
+*{box-sizing:border-box}body{margin:0;background:#f1f5f9;color:var(--ink);font:16px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:1000px;margin:0 auto;padding:26px 16px 42px}h1{font-size:clamp(1.55rem,4vw,2.25rem);line-height:1.2;margin:0 0 8px}.subtitle{color:var(--muted);margin:0 0 20px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.tab{flex:1 1 150px}
+button{font:inherit;border:1px solid #cbd5e1;background:white;color:var(--ink);padding:10px 15px;border-radius:10px;font-weight:700;cursor:pointer}button.primary,.tab[aria-selected="true"]{background:var(--accent);color:white;border-color:var(--accent)}button:disabled{opacity:.4;cursor:not-allowed}
+.card{background:white;border:1px solid var(--line);border-radius:16px;padding:19px;margin:15px 0;box-shadow:0 4px 16px #0f172a0a}.label{font-size:.8rem;font-weight:750;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px}
+.nodes{display:flex;align-items:center;gap:10px;overflow-x:auto;padding:10px 4px 17px;min-height:100px}.node-wrap{display:flex;align-items:center;gap:10px;flex:0 0 auto}.node{min-width:105px;border:2px solid var(--line);border-radius:12px;background:white;overflow:hidden;transition:all .2s ease}.node.active{border-color:var(--active-line);background:var(--active);box-shadow:0 0 0 3px #16a34a20;transform:translateY(-2px)}.node .data{font-size:1.4rem;font-weight:800;text-align:center;padding:8px 10px 3px}.node .links{border-top:1px solid var(--line);text-align:center;color:var(--muted);padding:5px 6px;font-size:.74rem;white-space:nowrap}.arrow{color:var(--accent);font-size:1.5rem;font-weight:800;flex:0 0 auto}.none{flex:0 0 auto;border:2px dashed #94a3b8;color:#475569;border-radius:10px;padding:11px;font-weight:700}
+.status{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:8px}.status strong{display:block;margin-bottom:4px}.output{font:600 1rem ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere;min-height:28px}.controls{display:flex;flex-wrap:wrap;gap:9px;margin-top:15px}.progress{height:7px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin:12px 0}.progress>div{height:100%;width:0;background:var(--accent);transition:width .2s}
+pre{margin:0;padding:16px;background:#0f172a;color:#e2e8f0;border-radius:12px;overflow:auto;font-size:.86rem;line-height:1.65}.note{color:var(--muted);font-size:.9rem}.concept{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:12px}.concept>div{border:1px solid var(--line);border-radius:12px;padding:12px}
+@media(max-width:520px){.card{padding:15px}.node{min-width:85px}.node .data{font-size:1.2rem}}
+</style>
+</head>
+<body>
+<main>
+<h1>Linked List Traversal Visualizer</h1>
+<p class="subtitle">Learn singly, doubly, and circular linked lists with step-by-step traversal, highlighted nodes, and Python code.</p>
+<div class="tabs" role="tablist" aria-label="Linked list type">
+<button class="tab" role="tab" aria-selected="true" data-type="singly">Singly Linked List</button>
+<button class="tab" role="tab" aria-selected="false" data-type="doubly">Doubly Linked List</button>
+<button class="tab" role="tab" aria-selected="false" data-type="circular">Circular Linked List</button>
+</div>
+<section class="card">
+<div class="label" id="structureLabel">Singly linked list structure</div><div class="nodes" id="nodes" aria-live="polite"></div>
+<div class="progress"><div id="progressBar"></div></div>
+<div class="status"><strong id="stepTitle">Ready to begin</strong><div id="explanation">Start at the head and follow each node's next reference.</div></div>
+<div style="margin-top:16px"><div class="label">Traversal output</div><div class="output" id="output">(empty)</div></div>
+<div class="controls"><button id="prevBtn">← Previous</button><button class="primary" id="nextBtn">Next step →</button><button id="autoBtn">▶ Auto play</button><button id="resetBtn">↺ Reset</button></div>
+<p class="note" id="counter">Step 1</p>
+</section>
+<section class="card"><div class="label">What makes this list different?</div><div class="concept" id="concept"></div></section>
+<section class="card"><div class="label">Python implementation</div><pre><code id="code"></code></pre><p class="note" style="margin-bottom:0">Teaching tip: ask students to predict the next value before clicking “Next step”. Notice how the stopping condition differs for a circular list.</p></section>
+</main>
+<script>
+(() => {
+const configs = {
+singly:{
+label:'Singly linked list structure',
+concepts:[['Node fields','data and next'],['Direction','Forward only'],['Traversal stop','current is None'],['Last node','next = None']],
+code:`class Node:
+    def __init__(self, data):
+        self.data = data
+        self.next = None
+
+# Build: 10 -> 20 -> 30 -> None
+n1, n2, n3 = Node(10), Node(20), Node(30)
+n1.next = n2
+n2.next = n3
+head = n1
+
+# Traverse
+current = head
+while current is not None:
+    print(current.data)
+    current = current.next`,
+steps:[
+{pos:0,out:[],title:'1. Initialize current = head',text:'current refers to the first node (10). Nothing has been printed yet.'},
+{pos:0,out:[10],title:'2. Print current.data',text:'Print 10. Then move current to current.next.'},
+{pos:1,out:[10],title:'3. Move to the next node',text:'current now refers to node 20.'},
+{pos:1,out:[10,20],title:'4. Print current.data',text:'Print 20. Then move current to node 30.'},
+{pos:2,out:[10,20],title:'5. Move to the next node',text:'current now refers to node 30.'},
+{pos:2,out:[10,20,30],title:'6. Print current.data',text:'Print 30. Then current = current.next sets current to None.'},
+{pos:-1,out:[10,20,30],title:'7. Stop: current is None',text:'The while condition is false. Traversal is complete.'}]},
+doubly:{
+label:'Doubly linked list structure',
+concepts:[['Node fields','prev, data, and next'],['Direction','Forward and backward'],['Traversal stop','current is None'],['End nodes','first prev = None; last next = None']],
+code:`class Node:
+    def __init__(self, data):
+        self.data = data
+        self.prev = None
+        self.next = None
+
+# Build: None <- 10 <-> 20 <-> 30 -> None
+n1, n2, n3 = Node(10), Node(20), Node(30)
+n1.next = n2
+n2.prev = n1
+n2.next = n3
+n3.prev = n2
+head = n1
+
+# Forward traversal
+current = head
+while current is not None:
+    print(current.data)
+    current = current.next`,
+steps:[
+{pos:0,out:[],title:'1. Start at head',text:'current refers to node 10. Its prev reference is None because it is the first node.'},
+{pos:0,out:[10],title:'2. Print 10',text:'Print current.data. To continue forward, follow current.next.'},
+{pos:1,out:[10],title:'3. Move forward',text:'current now refers to 20. Its prev points back to node 10.'},
+{pos:1,out:[10,20],title:'4. Print 20',text:'Print 20, then follow current.next to node 30.'},
+{pos:2,out:[10,20],title:'5. Move forward',text:'current now refers to node 30. Its next reference is None.'},
+{pos:2,out:[10,20,30],title:'6. Print 30',text:'Print 30, then move to current.next, which is None.'},
+{pos:-1,out:[10,20,30],title:'7. Stop at None',text:'The traversal ends. Doubly linked lists can also be traversed backward using prev.'}]},
+circular:{
+label:'Circular singly linked list structure',
+concepts:[['Node fields','data and next'],['Direction','Forward around a loop'],['Traversal stop','Return to head'],['Last node','next points back to head']],
+code:`class Node:
+    def __init__(self, data):
+        self.data = data
+        self.next = None
+
+# Build: 10 -> 20 -> 30 --+
+#         ^                |
+#         +----------------+
+n1, n2, n3 = Node(10), Node(20), Node(30)
+n1.next = n2
+n2.next = n3
+n3.next = n1  # close the circle
+head = n1
+
+# Traverse exactly one round
+current = head
+if head is not None:
+    while True:
+        print(current.data)
+        current = current.next
+        if current == head:
+            break`,
+steps:[
+{pos:0,out:[],title:'1. Start at head',text:'current points to node 10. In a circular list, the last node eventually links back to head.'},
+{pos:0,out:[10],title:'2. Print 10',text:'Print 10, then follow next to node 20.'},
+{pos:1,out:[10],title:'3. Move to 20',text:'current now points to node 20. It is not None, because the links form a circle.'},
+{pos:1,out:[10,20],title:'4. Print 20',text:'Print 20, then follow next to node 30.'},
+{pos:2,out:[10,20],title:'5. Move to 30',text:'current now points to node 30. Its next points back to the first node.'},
+{pos:2,out:[10,20,30],title:'6. Print 30',text:'Print 30, then follow next. current returns to head (node 10).'},
+{pos:0,out:[10,20,30],title:'7. Detect return to head',text:'current == head is true, so break stops after one complete round. Checking only current is not None would loop forever.'}]}
+};
+let type='singly',step=0,timer=null;
+const $=id=>document.getElementById(id);
+function stopAuto(){if(timer)clearInterval(timer);timer=null;$('autoBtn').textContent='▶ Auto play'}
+function renderNodes(pos){
+$('nodes').innerHTML='';
+[10,20,30].forEach((value,i)=>{
+const wrap=document.createElement('div');wrap.className='node-wrap';
+const node=document.createElement('div');node.className='node'+(pos===i?' active':'');
+let links=type==='doubly'?`prev: ${i===0?'None':[10,20,30][i-1]}<br>next: ${i===2?'None':[10,20,30][i+1]}`:`next: ${type==='circular'&&i===2?'10 (head)':(i===2?'None':[10,20,30][i+1])}`;
+node.innerHTML=`<div class="data">${value}</div><div class="links">${links}</div>`;
+wrap.appendChild(node);
+if(i<2){const arrow=document.createElement('div');arrow.className='arrow';arrow.textContent=type==='doubly'?'⇄':'→';wrap.appendChild(arrow)}
+$('nodes').appendChild(wrap);
+});
+if(type==='circular'){const loop=document.createElement('div');loop.className='none';loop.style.borderColor='#2563eb';loop.textContent='↶ last.next → head (10)';$('nodes').appendChild(loop)}
+else{const arrow=document.createElement('div');arrow.className='arrow';arrow.textContent='→';$('nodes').appendChild(arrow);const none=document.createElement('div');none.className='none';none.textContent='None';$('nodes').appendChild(none)}
+}
+function renderConcepts(){const target=$('concept');target.innerHTML='';configs[type].concepts.forEach(([title,desc])=>{const item=document.createElement('div');const strong=document.createElement('strong');strong.textContent=title;const p=document.createElement('p');p.className='note';p.style.margin='5px 0 0';p.textContent=desc;item.append(strong,p);target.appendChild(item)})}
+function render(){
+const config=configs[type],s=config.steps[step];$('structureLabel').textContent=config.label;renderNodes(s.pos);renderConcepts();$('code').textContent=config.code;$('output').textContent=s.out.length?s.out.join('  →  '):'(empty)';$('stepTitle').textContent=s.title;$('explanation').textContent=s.text;$('counter').textContent=`Step ${step+1} of ${config.steps.length}`;$('progressBar').style.width=`${step/(config.steps.length-1)*100}%`;$('prevBtn').disabled=step===0;$('nextBtn').disabled=step===config.steps.length-1;if(step===config.steps.length-1)stopAuto()
+}
+document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{stopAuto();type=btn.dataset.type;step=0;document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',String(b===btn)));render()}));
+$('prevBtn').addEventListener('click',()=>{stopAuto();if(step>0)step--;render()});
+$('nextBtn').addEventListener('click',()=>{stopAuto();if(step<configs[type].steps.length-1)step++;render()});
+$('resetBtn').addEventListener('click',()=>{stopAuto();step=0;render()});
+$('autoBtn').addEventListener('click',()=>{if(timer){stopAuto();return}if(step===configs[type].steps.length-1)step=0;$('autoBtn').textContent='⏸ Pause';render();timer=setInterval(()=>{if(step<configs[type].steps.length-1){step++;render()}else stopAuto()},1600)});
+render();
+})();
+</script>
+</body>
+</html>
